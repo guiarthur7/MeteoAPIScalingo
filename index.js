@@ -1,12 +1,16 @@
 const express = require("express")
-const port = 8080
+const path = require("path")
 
 const app = express();
 
 app.get("/", (req, res) => {
-    res.send("Salut c'est Jean")
+    res.sendFile(path.join(__dirname, "index.html"))
 })
 
-app.listen(port, () => {
+app.get("/meteo", (req, res) => {
+    res.send("Salut")
+})
+
+app.listen(8000, () => {
     console.log("Serveur démarré avec succès")
 });
