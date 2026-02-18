@@ -63,8 +63,12 @@
         });
 
         fetch('/api/movies')
+            // ÉTAPE 1 : fetch retourne une Promise avec l'objet response
             .then(response => response.json())
-            .then(movies => {
+            // response.json() RETOURNE les données JSON
+
+            // ÉTAPE 2 : les données JSON deviennent "movies"
+            .then(movies => {           // movies = résultat de response.json()
                 allMovies = movies
                 displayMovies(movies);
             });
