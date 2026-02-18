@@ -12,6 +12,6 @@ app.get("/api/movies", (req, res) => {
     res.json(data.movies)
 })
 
-app.listen(8080, () => {
+app.listen(process.env.PORT || 8080, () => {
     console.log(`Serveur démarré sur le port 8080`)
 });
