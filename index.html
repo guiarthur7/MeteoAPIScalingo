@@ -8,11 +8,21 @@
 </head>
 
 <body>
-    <h1>Salut c'est Jean</h1>
-    <p>Bienvenue sur l'API Météo</p>
+    <header>Bienvenue sur CinéList</header>
+    <div id="movies"></div>
 
     <script>
-        console.log("salut depuis le navigateur");
+        fetch('/api/movies')
+            .then(response => response.json())
+            .then(movies => {
+                const container = document.getElementById('movies');
+
+                movies.forEach(movie => {
+                    const div = document.createElement('div');
+                    div.textContent = movie.Title + ' (' + movie.Year + ')';
+                    container.appendChild(div);
+                });
+            });
     </script>
 </body>
 
