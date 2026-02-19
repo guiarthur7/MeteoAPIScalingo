@@ -11,25 +11,62 @@ const pool = new Pool({
 });
 
 // Créer les tables si elles n'existent pas
-pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(100) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    
-    CREATE TABLE IF NOT EXISTS likes (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        movie_id VARCHAR(50) NOT NULL,
-        movie_title VARCHAR(255) NOT NULL,
-        movie_poster TEXT NOT NULL,
-        movie_year VARCHAR(20),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(user_id, movie_id)
-    );
-`);
+async function initDatabase() {
+    try {
+        // Créer les tables
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS movies (
+                id SERIAL PRIMARY KEY,
+                imdb_id VARCHAR(50) UNIQUE NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                year VARCHAR(20),
+                poster TEXT,
+                type VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS likes (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                movie_id INTEGER REFERENCES movies(id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, movie_id)
+            );
+        `);
+
+        // Importer les films depuis movies.json si la table est vide
+        const countResult = await pool.query('SELECT COUNT(*) FROM movies');
+        const movieCount = parseInt(countResult.rows[0].count);
+        
+        if (movieCount === 0) {
+            console.log('Import des films dans la base de données...');
+            const moviesData = require('./movies.json').movies;
+            
+            for (const movie of moviesData) {
+                try {
+                    await pool.query(
+                        'INSERT INTO movies (imdb_id, title, year, poster, type) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (imdb_id) DO NOTHING',
+                        [movie.imdbID, movie.Title, movie.Year, movie.Poster, movie.Type]
+                    );
+                } catch (err) {
+                    console.error('Erreur import film:', movie.Title, err.message);
+                }
+            }
+            console.log(`${moviesData.length} films importés avec succès !`);
+        }
+    } catch (error) {
+        console.error('Erreur initialisation base de données:', error);
+    }
+}
+
+initDatabase();
 
 const app = express();
 
@@ -53,8 +90,14 @@ app.get("/liked", (req, res) => {
     res.sendFile(path.join(__dirname, "liked.html"))
 })
 
-app.get("/api/movies", (req, res) => {
-    res.json(data.movies)
+app.get("/api/movies", async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, imdb_id as "imdbID", title as "Title", year as "Year", poster as "Poster", type as "Type" FROM movies ORDER BY id');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erreur récupération films:', error);
+        res.json([]);
+    }
 })
 
 // Route d'inscription
@@ -118,16 +161,25 @@ app.post("/api/login", async (req, res) => {
 
 // Ajouter un like
 app.post("/api/likes", async (req, res) => {
-    const { userId, movieId, movieTitle, moviePoster, movieYear } = req.body;
+    const { userId, imdbId } = req.body;
     
-    if (!userId || !movieId) {
+    if (!userId || !imdbId) {
         return res.json({ success: false, message: "Données manquantes" });
     }
 
     try {
+        // Récupérer l'ID du film depuis la table movies
+        const movieResult = await pool.query('SELECT id FROM movies WHERE imdb_id = $1', [imdbId]);
+        
+        if (movieResult.rows.length === 0) {
+            return res.json({ success: false, message: "Film introuvable" });
+        }
+        
+        const movieId = movieResult.rows[0].id;
+        
         await pool.query(
-            'INSERT INTO likes (user_id, movie_id, movie_title, movie_poster, movie_year) VALUES ($1, $2, $3, $4, $5)',
-            [userId, movieId, movieTitle, moviePoster, movieYear]
+            'INSERT INTO likes (user_id, movie_id) VALUES ($1, $2)',
+            [userId, movieId]
         );
         res.json({ success: true });
     } catch (error) {
@@ -140,10 +192,19 @@ app.post("/api/likes", async (req, res) => {
 });
 
 // Retirer un like
-app.delete("/api/likes/:userId/:movieId", async (req, res) => {
-    const { userId, movieId } = req.params;
+app.delete("/api/likes/:userId/:imdbId", async (req, res) => {
+    const { userId, imdbId } = req.params;
     
     try {
+        // Récupérer l'ID du film depuis la table movies
+        const movieResult = await pool.query('SELECT id FROM movies WHERE imdb_id = $1', [imdbId]);
+        
+        if (movieResult.rows.length === 0) {
+            return res.json({ success: false, message: "Film introuvable" });
+        }
+        
+        const movieId = movieResult.rows[0].id;
+        
         await pool.query('DELETE FROM likes WHERE user_id = $1 AND movie_id = $2', [userId, movieId]);
         res.json({ success: true });
     } catch (error) {
@@ -157,7 +218,16 @@ app.get("/api/likes/:userId", async (req, res) => {
     
     try {
         const result = await pool.query(
-            'SELECT movie_id, movie_title, movie_poster, movie_year FROM likes WHERE user_id = $1 ORDER BY created_at DESC',
+            `SELECT 
+                m.imdb_id as "imdbID",
+                m.title as "Title",
+                m.poster as "Poster",
+                m.year as "Year",
+                m.type as "Type"
+            FROM likes l
+            JOIN movies m ON l.movie_id = m.id
+            WHERE l.user_id = $1
+            ORDER BY l.created_at DESC`,
             [userId]
         );
         res.json({ success: true, likes: result.rows });
