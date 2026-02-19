@@ -60,10 +60,11 @@ app.post("/api/signup", async (req, res) => {
         );
         res.json({ success: true, user: result.rows[0] });
     } catch (error) {
+        console.error('Erreur inscription:', error.message, error.code);
         if (error.code === '23505') {
             res.json({ success: false, message: "Cet email existe déjà" });
         } else {
-            res.json({ success: false, message: "Erreur lors de l'inscription" });
+            res.json({ success: false, message: error.message || "Erreur lors de l'inscription" });
         }
     }
 });
