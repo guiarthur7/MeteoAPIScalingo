@@ -158,16 +158,12 @@
                 });
 
                 const data = await response.json();
-                console.log('Réponse inscription:', data); // Debug
 
                 if (data.success) {
-                    showMessage('✅ Inscription réussie ! Redirection...', 'success');
                     // Enregistrer l'utilisateur dans localStorage
                     localStorage.setItem('user', JSON.stringify(data.user));
-                    console.log('User sauvegardé:', localStorage.getItem('user')); // Debug
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1500);
+                    // Redirection immédiate
+                    window.location.replace('/');
                 } else {
                     showMessage('❌ ' + (data.message || 'Erreur d\'inscription'), 'error');
                 }
