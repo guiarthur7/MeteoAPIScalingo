@@ -19,8 +19,7 @@ pool.query(`
         password VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`).then(() => console.log("✅ Table users créée"))
-  .catch(err => console.error('Erreur table:', err));
+`);
 
 const app = express();
 

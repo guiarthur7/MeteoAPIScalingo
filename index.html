@@ -29,14 +29,10 @@
     <div id="movies"></div>
 
     <script>
-        // Vérifier si l'utilisateur est connecté
         const user = JSON.parse(localStorage.getItem('user') || 'null');
-        console.log('User dans index.html:', user); // Debug
 
         if (!user || !user.username) {
-            // Pas connecté ou user invalide -> redirection vers register
-            console.log('Pas de user ou user invalide, redirection vers register');
-            localStorage.removeItem('user'); // Nettoyer le localStorage
+            localStorage.removeItem('user');
             window.location.href = '/register';
         }
 
