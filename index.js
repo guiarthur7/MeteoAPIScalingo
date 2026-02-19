@@ -10,18 +10,16 @@ const pool = new Pool({
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-// Créer les tables
+// Créer les tables si elles n'existent pas
 pool.query(`
-    DROP TABLE IF EXISTS users CASCADE;
-    CREATE TABLE users (
+    CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     
-    DROP TABLE IF EXISTS likes CASCADE;
-    CREATE TABLE likes (
+    CREATE TABLE IF NOT EXISTS likes (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         movie_id VARCHAR(50) NOT NULL,

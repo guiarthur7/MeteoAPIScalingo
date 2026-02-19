@@ -63,36 +63,52 @@
         let currentView = 'all';
 
         async function toggleLike(movieId, movieTitle, moviePoster, movieYear) {
+            console.log('Toggle like:', { movieId, userId: user.id });
+
+            if (!user.id) {
+                alert('Erreur: utilisateur non connecté correctement. Reconnectez-vous.');
+                return;
+            }
+
             const isLiked = likedMovies.some(m => m.movie_id === movieId);
 
-            if (isLiked) {
-                const response = await fetch(`/api/likes/${user.id}/${movieId}`, { method: 'DELETE' });
-                const data = await response.json();
-                if (data.success) {
-                    likedMovies = likedMovies.filter(m => m.movie_id !== movieId);
-                    if (currentView === 'all') {
+            try {
+                if (isLiked) {
+                    const response = await fetch(`/api/likes/${user.id}/${movieId}`, { method: 'DELETE' });
+                    const data = await response.json();
+                    console.log('Unlike response:', data);
+                    if (data.success) {
+                        likedMovies = likedMovies.filter(m => m.movie_id !== movieId);
+                        if (currentView === 'all') {
+                            displayMovies(allMovies);
+                        } else {
+                            displayLikedMovies();
+                        }
+                    }
+                } else {
+                    const response = await fetch('/api/likes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userId: user.id,
+                            movieId: movieId,
+                            movieTitle: movieTitle,
+                            moviePoster: moviePoster,
+                            movieYear: movieYear
+                        })
+                    });
+                    const data = await response.json();
+                    console.log('Like response:', data);
+                    if (data.success) {
+                        likedMovies.push({ movie_id: movieId, movie_title: movieTitle, movie_poster: moviePoster, movie_year: movieYear });
                         displayMovies(allMovies);
                     } else {
-                        displayLikedMovies();
+                        alert('Erreur: ' + (data.message || 'Impossible de liker'));
                     }
                 }
-            } else {
-                const response = await fetch('/api/likes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: user.id,
-                        movieId: movieId,
-                        movieTitle: movieTitle,
-                        moviePoster: moviePoster,
-                        movieYear: movieYear
-                    })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    likedMovies.push({ movie_id: movieId, movie_title: movieTitle, movie_poster: moviePoster, movie_year: movieYear });
-                    displayMovies(allMovies);
-                }
+            } catch (error) {
+                console.error('Erreur toggleLike:', error);
+                alert('Erreur de connexion au serveur');
             }
         }
 
