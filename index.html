@@ -115,11 +115,17 @@
                          onerror="this.parentElement.style.display='none'">
                     <div class="movie-title">${movie.Title}</div>
                     <div class="movie-year">${movie.Year}</div>
-                    <button onclick="toggleLike('${movie.imdbID}', '${movie.Title.replace(/'/g, "\\'")}', '${movie.Poster}', '${movie.Year}')" 
+                    <button class="like-btn"
                             style="width: 100%; margin-top: 10px; padding: 8px; cursor: pointer; background: ${isLiked ? '#ef4444' : '#667eea'}; color: white; border: none; border-radius: 5px; font-weight: bold;">
                         ${isLiked ? '❤️ Liké' : '🤍 Liker'}
                     </button>
                 `;
+
+                const button = div.querySelector('.like-btn');
+                button.addEventListener('click', () => {
+                    toggleLike(movie.imdbID, movie.Title, movie.Poster, movie.Year);
+                });
+
                 container.appendChild(div);
             });
         }
@@ -143,11 +149,17 @@
                          onerror="this.parentElement.style.display='none'">
                     <div class="movie-title">${movie.movie_title}</div>
                     <div class="movie-year">${movie.movie_year}</div>
-                    <button onclick="toggleLike('${movie.movie_id}', '${movie.movie_title.replace(/'/g, "\\'")}', '${movie.movie_poster}', '${movie.movie_year}')" 
+                    <button class="like-btn"
                             style="width: 100%; margin-top: 10px; padding: 8px; cursor: pointer; background: #ef4444; color: white; border: none; border-radius: 5px; font-weight: bold;">
                         ❤️ Liké
                     </button>
                 `;
+
+                const button = div.querySelector('.like-btn');
+                button.addEventListener('click', () => {
+                    toggleLike(movie.movie_id, movie.movie_title, movie.movie_poster, movie.movie_year);
+                });
+
                 container.appendChild(div);
             });
         }
