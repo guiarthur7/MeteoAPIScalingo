@@ -15,9 +15,8 @@ pool.query(`
     DROP TABLE IF EXISTS users CASCADE;
     CREATE TABLE users (
         id SERIAL PRIMARY KEY,
-        email VARCHAR(100) UNIQUE NOT NULL,
+        username VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
-        name VARCHAR(100),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `).then(() => console.log("✅ Table users créée"))
@@ -47,23 +46,23 @@ app.get("/api/movies", (req, res) => {
 
 // Route d'inscription
 app.post("/api/signup", async (req, res) => {
-    const { email, password, name } = req.body;
+    const { username, password } = req.body;
     
-    if (!email || !password) {
-        return res.json({ success: false, message: "Email et mot de passe requis" });
+    if (!username || !password) {
+        return res.json({ success: false, message: "Nom d'utilisateur et mot de passe requis" });
     }
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const result = await pool.query(
-            'INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING id, email, name',
-            [email, hashedPassword, name]
+            'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username',
+            [username, hashedPassword]
         );
         res.json({ success: true, user: result.rows[0] });
     } catch (error) {
         console.error('Erreur inscription:', error.message, error.code);
         if (error.code === '23505') {
-            res.json({ success: false, message: "Cet email existe déjà" });
+            res.json({ success: false, message: "Ce nom d'utilisateur existe déjà" });
         } else {
             res.json({ success: false, message: error.message || "Erreur lors de l'inscription" });
         }
@@ -72,32 +71,31 @@ app.post("/api/signup", async (req, res) => {
 
 // Route de connexion
 app.post("/api/login", async (req, res) => {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
     
-    if (!email || !password) {
-        return res.json({ success: false, message: "Email et mot de passe requis" });
+    if (!username || !password) {
+        return res.json({ success: false, message: "Nom d'utilisateur et mot de passe requis" });
     }
 
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
         const user = result.rows[0];
         
         if (!user) {
-            return res.json({ success: false, message: "Email ou mot de passe incorrect" });
+            return res.json({ success: false, message: "Nom d'utilisateur ou mot de passe incorrect" });
         }
         
         const validPassword = await bcrypt.compare(password, user.password);
         
         if (!validPassword) {
-            return res.json({ success: false, message: "Email ou mot de passe incorrect" });
+            return res.json({ success: false, message: "Nom d'utilisateur ou mot de passe incorrect" });
         }
         
         res.json({ 
             success: true, 
             user: { 
                 id: user.id, 
-                email: user.email, 
-                name: user.name 
+                username: user.username
             } 
         });
     } catch (error) {
