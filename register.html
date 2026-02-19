@@ -127,13 +127,8 @@
     </div>
 
     <script>
-        // Temporairement désactivé pour debug
-        // const user = JSON.parse(localStorage.getItem('user') || 'null');
-        // console.log('User dans register.html:', user);
-        // if (user) {
-        //     console.log('User existe, redirection vers accueil');
-        //     window.location.href = '/';
-        // }
+        // Nettoyer le localStorage au cas où
+        localStorage.removeItem('user');
 
         function showMessage(text, type) {
             const msg = document.getElementById('message');
