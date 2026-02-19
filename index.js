@@ -10,16 +10,17 @@ const pool = new Pool({
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-// Créer la table users
+// Créer la table users (supprime l'ancienne si elle existe)
 pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
+    DROP TABLE IF EXISTS users CASCADE;
+    CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         email VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         name VARCHAR(100),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`).then(() => console.log("✅ Table users prête"))
+`).then(() => console.log("✅ Table users créée"))
   .catch(err => console.error('Erreur table:', err));
 
 const app = express();
