@@ -127,13 +127,13 @@
     </div>
 
     <script>
-        // Si déjà connecté, rediriger vers l'accueil
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
-        console.log('User dans register.html:', user); // Debug
-        if (user) {
-            console.log('User existe, redirection vers accueil');
-            window.location.href = '/';
-        }
+        // Temporairement désactivé pour debug
+        // const user = JSON.parse(localStorage.getItem('user') || 'null');
+        // console.log('User dans register.html:', user);
+        // if (user) {
+        //     console.log('User existe, redirection vers accueil');
+        //     window.location.href = '/';
+        // }
 
         function showMessage(text, type) {
             const msg = document.getElementById('message');

@@ -33,9 +33,10 @@
         const user = JSON.parse(localStorage.getItem('user') || 'null');
         console.log('User dans index.html:', user); // Debug
 
-        if (!user) {
-            // Pas connecté -> redirection vers register
-            console.log('Pas de user, redirection vers register');
+        if (!user || !user.username) {
+            // Pas connecté ou user invalide -> redirection vers register
+            console.log('Pas de user ou user invalide, redirection vers register');
+            localStorage.removeItem('user'); // Nettoyer le localStorage
             window.location.href = '/register';
         }
 
@@ -45,7 +46,7 @@
         }
 
         // Attendre que le DOM soit chargé
-        if (user) {
+        if (user && user.username) {
             window.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('username').textContent = `Bonjour ${user.username} !`;
             });
