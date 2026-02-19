@@ -163,10 +163,12 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showMessage('✅ Inscription réussie ! Redirection vers la connexion...', 'success');
+                    showMessage('✅ Inscription réussie ! Redirection...', 'success');
+                    // Enregistrer l'utilisateur dans localStorage
+                    localStorage.setItem('user', JSON.stringify(data.user));
                     setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 1500);
+                        window.location.href = '/';
+                    }, 1000);
                 } else {
                     showMessage('❌ ' + (data.message || 'Erreur d\'inscription'), 'error');
                 }
