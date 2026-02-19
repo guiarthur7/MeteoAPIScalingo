@@ -49,6 +49,10 @@ app.get("/register", (req, res) => {
     res.sendFile(path.join(__dirname, "register.html"))
 })
 
+app.get("/liked", (req, res) => {
+    res.sendFile(path.join(__dirname, "liked.html"))
+})
+
 app.get("/api/movies", (req, res) => {
     res.json(data.movies)
 })
