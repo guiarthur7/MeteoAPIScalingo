@@ -31,18 +31,24 @@
     <script>
         // Vérifier si l'utilisateur est connecté
         const user = JSON.parse(localStorage.getItem('user') || 'null');
+        console.log('User dans index.html:', user); // Debug
 
         if (!user) {
             // Pas connecté -> redirection vers register
+            console.log('Pas de user, redirection vers register');
             window.location.href = '/register';
-        } else {
-            // Afficher le nom de l'utilisateur
-            document.getElementById('username').textContent = `Bonjour ${user.username} !`;
         }
 
         function logout() {
             localStorage.removeItem('user');
             window.location.href = '/register';
+        }
+
+        // Attendre que le DOM soit chargé
+        if (user) {
+            window.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('username').textContent = `Bonjour ${user.username} !`;
+            });
         }
 
         let allMovies = [];

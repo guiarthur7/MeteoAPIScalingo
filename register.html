@@ -129,7 +129,9 @@
     <script>
         // Si déjà connecté, rediriger vers l'accueil
         const user = JSON.parse(localStorage.getItem('user') || 'null');
+        console.log('User dans register.html:', user); // Debug
         if (user) {
+            console.log('User existe, redirection vers accueil');
             window.location.href = '/';
         }
 
@@ -156,14 +158,16 @@
                 });
 
                 const data = await response.json();
+                console.log('Réponse inscription:', data); // Debug
 
                 if (data.success) {
                     showMessage('✅ Inscription réussie ! Redirection...', 'success');
                     // Enregistrer l'utilisateur dans localStorage
                     localStorage.setItem('user', JSON.stringify(data.user));
+                    console.log('User sauvegardé:', localStorage.getItem('user')); // Debug
                     setTimeout(() => {
                         window.location.href = '/';
-                    }, 1000);
+                    }, 1500);
                 } else {
                     showMessage('❌ ' + (data.message || 'Erreur d\'inscription'), 'error');
                 }
