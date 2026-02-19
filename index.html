@@ -22,10 +22,14 @@
     <div style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
         <div style="display: flex; gap: 15px; margin-bottom: 20px;">
             <a href="/" style="text-decoration: none;">
-                <button style="padding: 10px 20px; cursor: pointer; background: #667eea; color: white; border: none; border-radius: 5px; font-weight: bold;">Tous les films</button>
+                <button
+                    style="padding: 10px 20px; cursor: pointer; background: #667eea; color: white; border: none; border-radius: 5px; font-weight: bold;">Tous
+                    les films</button>
             </a>
             <a href="/liked" style="text-decoration: none;">
-                <button style="padding: 10px 20px; cursor: pointer; background: #2a2a2a; color: white; border: none; border-radius: 5px; font-weight: bold;">Mes films likés</button>
+                <button
+                    style="padding: 10px 20px; cursor: pointer; background: #2a2a2a; color: white; border: none; border-radius: 5px; font-weight: bold;">Mes
+                    films likés</button>
             </a>
         </div>
     </div>
@@ -60,6 +64,7 @@
 
         let allMovies = [];
         let likedMovies = [];
+        let currentDisplayedMovies = [];
 
         async function toggleLike(movieId, movieTitle, moviePoster, movieYear) {
             if (!user.id) {
@@ -75,7 +80,7 @@
                     const data = await response.json();
                     if (data.success) {
                         likedMovies = likedMovies.filter(m => m.movie_id !== movieId);
-                        displayMovies(allMovies);
+                        displayMovies(currentDisplayedMovies);
                     }
                 } else {
                     const response = await fetch('/api/likes', {
@@ -92,7 +97,7 @@
                     const data = await response.json();
                     if (data.success) {
                         likedMovies.push({ movie_id: movieId, movie_title: movieTitle, movie_poster: moviePoster, movie_year: movieYear });
-                        displayMovies(allMovies);
+                        displayMovies(currentDisplayedMovies);
                     } else {
                         alert('Erreur: ' + (data.message || 'Impossible de liker'));
                     }
@@ -104,6 +109,7 @@
         }
 
         function displayMovies(movies) {
+            currentDisplayedMovies = movies;
             const container = document.getElementById('movies');
             container.innerHTML = '';
 
