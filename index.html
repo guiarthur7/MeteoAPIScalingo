@@ -19,6 +19,17 @@
         </div>
     </header>
 
+    <div style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
+        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <button id="allMoviesTab" onclick="showAllMovies()"
+                style="padding: 10px 20px; cursor: pointer; background: #667eea; color: white; border: none; border-radius: 5px; font-weight: bold;">Tous
+                les films</button>
+            <button id="likedMoviesTab" onclick="showLikedMovies()"
+                style="padding: 10px 20px; cursor: pointer; background: #2a2a2a; color: white; border: none; border-radius: 5px; font-weight: bold;">Mes
+                films likés</button>
+        </div>
+    </div>
+
     <div class="search">
         <form id="searchForm">
             <input type="text" id="search" name="search" placeholder="Rechercher...">
@@ -41,7 +52,6 @@
             window.location.href = '/register';
         }
 
-        // Attendre que le DOM soit chargé
         if (user && user.username) {
             window.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('username').textContent = `Bonjour ${user.username} !`;
@@ -49,6 +59,43 @@
         }
 
         let allMovies = [];
+        let likedMovies = [];
+        let currentView = 'all';
+
+        async function toggleLike(movieId, movieTitle, moviePoster, movieYear) {
+            const isLiked = likedMovies.some(m => m.movie_id === movieId);
+
+            if (isLiked) {
+                const response = await fetch(`/api/likes/${user.id}/${movieId}`, { method: 'DELETE' });
+                const data = await response.json();
+                if (data.success) {
+                    likedMovies = likedMovies.filter(m => m.movie_id !== movieId);
+                    if (currentView === 'all') {
+                        displayMovies(allMovies);
+                    } else {
+                        displayLikedMovies();
+                    }
+                }
+            } else {
+                const response = await fetch('/api/likes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        movieId: movieId,
+                        movieTitle: movieTitle,
+                        moviePoster: moviePoster,
+                        movieYear: movieYear
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    likedMovies.push({ movie_id: movieId, movie_title: movieTitle, movie_poster: moviePoster, movie_year: movieYear });
+                    displayMovies(allMovies);
+                }
+            }
+        }
+
         function displayMovies(movies) {
             const container = document.getElementById('movies');
             container.innerHTML = '';
@@ -58,6 +105,7 @@
                     return;
                 }
 
+                const isLiked = likedMovies.some(m => m.movie_id === movie.imdbID);
                 const div = document.createElement('div');
                 div.className = 'movie-card';
                 div.innerHTML = `
@@ -67,9 +115,57 @@
                          onerror="this.parentElement.style.display='none'">
                     <div class="movie-title">${movie.Title}</div>
                     <div class="movie-year">${movie.Year}</div>
+                    <button onclick="toggleLike('${movie.imdbID}', '${movie.Title.replace(/'/g, "\\'")}', '${movie.Poster}', '${movie.Year}')" 
+                            style="width: 100%; margin-top: 10px; padding: 8px; cursor: pointer; background: ${isLiked ? '#ef4444' : '#667eea'}; color: white; border: none; border-radius: 5px; font-weight: bold;">
+                        ${isLiked ? '❤️ Liké' : '🤍 Liker'}
+                    </button>
                 `;
                 container.appendChild(div);
             });
+        }
+
+        function displayLikedMovies() {
+            const container = document.getElementById('movies');
+            container.innerHTML = '';
+
+            if (likedMovies.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #e0e0e0; padding: 40px; font-size: 1.2em;">Aucun film liké pour le moment</div>';
+                return;
+            }
+
+            likedMovies.forEach(movie => {
+                const div = document.createElement('div');
+                div.className = 'movie-card';
+                div.innerHTML = `
+                    <img src="${movie.movie_poster}" 
+                         alt="${movie.movie_title}" 
+                         class="movie-poster"
+                         onerror="this.parentElement.style.display='none'">
+                    <div class="movie-title">${movie.movie_title}</div>
+                    <div class="movie-year">${movie.movie_year}</div>
+                    <button onclick="toggleLike('${movie.movie_id}', '${movie.movie_title.replace(/'/g, "\\'")}', '${movie.movie_poster}', '${movie.movie_year}')" 
+                            style="width: 100%; margin-top: 10px; padding: 8px; cursor: pointer; background: #ef4444; color: white; border: none; border-radius: 5px; font-weight: bold;">
+                        ❤️ Liké
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function showAllMovies() {
+            currentView = 'all';
+            document.getElementById('allMoviesTab').style.background = '#667eea';
+            document.getElementById('likedMoviesTab').style.background = '#2a2a2a';
+            document.getElementById('searchForm').style.display = 'block';
+            displayMovies(allMovies);
+        }
+
+        function showLikedMovies() {
+            currentView = 'liked';
+            document.getElementById('allMoviesTab').style.background = '#2a2a2a';
+            document.getElementById('likedMoviesTab').style.background = '#667eea';
+            document.getElementById('searchForm').style.display = 'none';
+            displayLikedMovies();
         }
 
         document.getElementById('searchForm').addEventListener('submit', (e) => {
@@ -86,16 +182,22 @@
             }
         });
 
-        fetch('/api/movies')
-            // ÉTAPE 1 : fetch retourne une Promise avec l'objet response
-            .then(response => response.json())
-            // response.json() RETOURNE les données JSON
+        // Charger les films et les likes
+        async function init() {
+            const moviesResponse = await fetch('/api/movies');
+            const movies = await moviesResponse.json();
+            allMovies = movies;
 
-            // ÉTAPE 2 : les données JSON deviennent "movies"
-            .then(movies => {           // movies = résultat de response.json()
-                allMovies = movies
-                displayMovies(movies);
-            });
+            const likesResponse = await fetch(`/api/likes/${user.id}`);
+            const likesData = await likesResponse.json();
+            if (likesData.success) {
+                likedMovies = likesData.likes;
+            }
+
+            displayMovies(allMovies);
+        }
+
+        init();
     </script>
 </body>
 
