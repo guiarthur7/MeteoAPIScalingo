@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/guiarthur7/MeteoAPIScalingo#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.6.2",
     "express": "^5.2.1",
     "node-fetch": "^3.3.2",

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - CinéList</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button[type="submit"]:hover {
+            background: #5568d3;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎬 CinéList</h1>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('login')">Connexion</button>
+            <button class="tab" onclick="showTab('signup')">Inscription</button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <!-- Formulaire de connexion -->
+        <div id="login-form" class="form-section active">
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Mot de passe</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit">Se connecter</button>
+            </form>
+        </div>
+
+        <!-- Formulaire d'inscription -->
+        <div id="signup-form" class="form-section">
+            <form onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label for="signup-name">Nom</label>
+                    <input type="text" id="signup-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Mot de passe</label>
+                    <input type="password" id="signup-password" required minlength="4">
+                </div>
+                <button type="submit">S'inscrire</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Changer d'onglet
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+
+            if (tab === 'login') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('signup-form').classList.add('active');
+            }
+            hideMessage();
+        }
+
+        // Afficher un message
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = `message ${type}`;
+            msg.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
+        }
+
+        // Gérer la connexion
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Connexion réussie ! Redirection...', 'success');
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    showMessage(data.message || 'Erreur de connexion', 'error');
+                }
+            } catch (error) {
+                showMessage('Erreur de connexion au serveur', 'error');
+            }
+        }
+
+        // Gérer l'inscription
+        async function handleSignup(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+
+            try {
+                const response = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Inscription réussie ! Vous pouvez vous connecter.', 'success');
+                    setTimeout(() => {
+                        showTab('login');
+                        document.getElementById('login-email').value = email;
+                    }, 1500);
+                } else {
+                    showMessage(data.message || 'Erreur d\'inscription', 'error');
+                }
+            } catch (error) {
+                showMessage('Erreur de connexion au serveur', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

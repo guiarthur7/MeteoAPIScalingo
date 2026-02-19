@@ -12,6 +12,7 @@
     <header>
         <img src="./src/logo.png" alt="Logo">
         <span>CinéList</span>
+        <div id="user-info" style="margin-left: auto; display: flex; gap: 10px; align-items: center;"></div>
     </header>
 
     <div class="search">
@@ -24,6 +25,26 @@
     <div id="movies"></div>
 
     <script>
+        // Vérifier si l'utilisateur est connecté
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        const userInfo = document.getElementById('user-info');
+
+        if (user) {
+            userInfo.innerHTML = `
+                <span style="color: white;">Bonjour ${user.name} !</span>
+                <button onclick="logout()" style="padding: 5px 15px; cursor: pointer; background: white; border: none; border-radius: 5px;">Déconnexion</button>
+            `;
+        } else {
+            userInfo.innerHTML = `
+                <a href="/login" style="color: white; text-decoration: none; padding: 5px 15px; background: rgba(255,255,255,0.2); border-radius: 5px;">Connexion</a>
+            `;
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.reload();
+        }
+
         let allMovies = [];
         function displayMovies(movies) {
             const container = document.getElementById('movies');

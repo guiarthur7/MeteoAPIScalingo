@@ -20,11 +20,14 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"))
 })
 
+app.get("/login", (req, res) => {
+    res.sendFile(path.join(__dirname, "login.html"))
+})
+
 app.get("/api/movies", (req, res) => {
     res.json(data.movies)
 })
 
-// Créer la table users au démarrage
 pool.query(`
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
