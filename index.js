@@ -29,7 +29,7 @@ app.use(express.json());
 app.use('/src', express.static('src'));
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"))
+    res.sendFile(path.join(__dirname, "register.html"))
 })
 
 app.get("/login", (req, res) => {

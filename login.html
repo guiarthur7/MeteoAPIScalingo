@@ -123,11 +123,16 @@
 
         <div class="links">
             <p>Pas encore de compte ? <a href="/register">S'inscrire</a></p>
-            <p><a href="/">Retour à l'accueil</a></p>
         </div>
     </div>
 
     <script>
+        // Si déjà connecté, rediriger vers l'accueil
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (user) {
+            window.location.href = '/';
+        }
+
         function showMessage(text, type) {
             const msg = document.getElementById('message');
             msg.textContent = text;
