@@ -2,16 +2,28 @@ const express = require("express")
 const path = require("path")
 const data = require("./movies.json")
 const { Pool } = require("pg")
+const bcrypt = require("bcrypt")
 
-// Connexion PostgreSQL
+// Connexion PostgreSQL Scalingo
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
+// Créer la table users
+pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        name VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`).then(() => console.log("✅ Table users prête"))
+  .catch(err => console.error('Erreur table:', err));
+
 const app = express();
 
-// Parser le JSON dans les requêtes
 app.use(express.json());
 
 app.use('/src', express.static('src'));
@@ -28,44 +40,27 @@ app.get("/api/movies", (req, res) => {
     res.json(data.movies)
 })
 
-pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        name VARCHAR(100),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-`).catch(err => console.error('Erreur création table:', err));
-
 // Route d'inscription
 app.post("/api/signup", async (req, res) => {
     const { email, password, name } = req.body;
     
     if (!email || !password) {
-        return res.json({ success: false, error: "Email et mot de passe requis" });
+        return res.json({ success: false, message: "Email et mot de passe requis" });
     }
-    
+
     try {
-        // Vérifier si l'email existe déjà
-        const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-        if (existing.rows.length > 0) {
-            return res.json({ success: false, error: "Cet email existe déjà" });
-        }
-        
-        // Insérer le nouvel utilisateur (⚠️ mot de passe non hashé pour l'instant)
+        const hashedPassword = await bcrypt.hash(password, 10);
         const result = await pool.query(
             'INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING id, email, name',
-            [email, password, name]
+            [email, hashedPassword, name]
         );
-        
-        res.json({ 
-            success: true, 
-            message: "Compte créé avec succès",
-            user: result.rows[0] 
-        });
+        res.json({ success: true, user: result.rows[0] });
     } catch (error) {
-        res.json({ success: false, error: error.message });
+        if (error.code === '23505') {
+            res.json({ success: false, message: "Cet email existe déjà" });
+        } else {
+            res.json({ success: false, message: "Erreur lors de l'inscription" });
+        }
     }
 });
 
@@ -74,38 +69,33 @@ app.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
     
     if (!email || !password) {
-        return res.json({ success: false, error: "Email et mot de passe requis" });
+        return res.json({ success: false, message: "Email et mot de passe requis" });
     }
-    
+
     try {
-        const result = await pool.query(
-            'SELECT id, email, name, password FROM users WHERE email = $1',
-            [email]
-        );
-        
-        if (result.rows.length === 0) {
-            return res.json({ success: false, error: "Email ou mot de passe incorrect" });
-        }
-        
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         const user = result.rows[0];
         
-        // Vérifier le mot de passe (⚠️ comparaison simple pour l'instant)
-        if (user.password !== password) {
-            return res.json({ success: false, error: "Email ou mot de passe incorrect" });
+        if (!user) {
+            return res.json({ success: false, message: "Email ou mot de passe incorrect" });
         }
         
-        // Connexion réussie
+        const validPassword = await bcrypt.compare(password, user.password);
+        
+        if (!validPassword) {
+            return res.json({ success: false, message: "Email ou mot de passe incorrect" });
+        }
+        
         res.json({ 
             success: true, 
-            message: "Connexion réussie",
             user: { 
                 id: user.id, 
                 email: user.email, 
                 name: user.name 
-            }
+            } 
         });
     } catch (error) {
-        res.json({ success: false, error: error.message });
+        res.json({ success: false, message: "Erreur lors de la connexion" });
     }
 });
 
