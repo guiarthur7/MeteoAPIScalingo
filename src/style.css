@@ -128,3 +128,7 @@ header span {
         padding: 20px;
     }
 }
+
+html {
+    background-color: red;
+}

@@ -5,7 +5,6 @@ const data = require("./movies.json")
 const { Pool } = require("pg")
 const bcrypt = require("bcrypt")
 
-// Connexion PostgreSQL Scalingo
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
@@ -13,7 +12,6 @@ const pool = new Pool({
     idleTimeoutMillis: 30000
 });
 
-// Créer les tables si elles n'existent pas
 async function initDatabase() {
     try {
         const testResult = await pool.query('SELECT NOW()');
