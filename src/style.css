@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #0f0f0f;
+    background: #e20e0e;
     min-height: 100vh;
     color: #e0e0e0;
 }
@@ -127,8 +127,4 @@ header span {
         grid-template-columns: 1fr;
         padding: 20px;
     }
-}
-
-html {
-    background: red;
 }
