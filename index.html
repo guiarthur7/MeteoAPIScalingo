@@ -126,7 +126,7 @@
                     return;
                 }
 
-                const isLiked = likedMovies.some(m => m.movie_id === movie.imdbID);
+                const isLiked = likedMovies.some(m => m.imdbID === movie.imdbID);
                 const div = document.createElement('div');
                 div.className = 'movie-card';
                 div.innerHTML = `

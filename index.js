@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express")
 const path = require("path")
 const data = require("./movies.json")
@@ -7,13 +8,16 @@ const bcrypt = require("bcrypt")
 // Connexion PostgreSQL Scalingo
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000
 });
 
 // Créer les tables si elles n'existent pas
 async function initDatabase() {
     try {
-        // Créer les tables
+        const testResult = await pool.query('SELECT NOW()');
+        
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -21,7 +25,9 @@ async function initDatabase() {
                 password VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-            
+        `);
+        
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS movies (
                 id SERIAL PRIMARY KEY,
                 imdb_id VARCHAR(50) UNIQUE NOT NULL,
@@ -31,7 +37,9 @@ async function initDatabase() {
                 type VARCHAR(50),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-            
+        `);
+        
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS likes (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -46,7 +54,6 @@ async function initDatabase() {
         const movieCount = parseInt(countResult.rows[0].count);
         
         if (movieCount === 0) {
-            console.log('Import des films dans la base de données...');
             const moviesData = require('./movies.json').movies;
             
             for (const movie of moviesData) {
@@ -56,17 +63,14 @@ async function initDatabase() {
                         [movie.imdbID, movie.Title, movie.Year, movie.Poster, movie.Type]
                     );
                 } catch (err) {
-                    console.error('Erreur import film:', movie.Title, err.message);
                 }
             }
-            console.log(`${moviesData.length} films importés avec succès !`);
         }
     } catch (error) {
         console.error('Erreur initialisation base de données:', error);
+        throw error;
     }
 }
-
-initDatabase();
 
 const app = express();
 
@@ -116,7 +120,6 @@ app.post("/api/signup", async (req, res) => {
         );
         res.json({ success: true, user: result.rows[0] });
     } catch (error) {
-        console.error('Erreur inscription:', error.message, error.code);
         if (error.code === '23505') {
             res.json({ success: false, message: "Ce nom d'utilisateur existe déjà" });
         } else {
@@ -236,6 +239,14 @@ app.get("/api/likes/:userId", async (req, res) => {
     }
 });
 
-app.listen(process.env.PORT || 8080, () => {
-    console.log(`Serveur démarré sur le port 8080`)
-});
+// Démarrage du serveur après init DB
+async function startServer() {
+    await initDatabase();
+    
+    const PORT = process.env.PORT || 8080;
+    app.listen(PORT, () => {
+        console.log(`Serveur démarré sur le port ${PORT}`)
+    });
+}
+
+startServer();
