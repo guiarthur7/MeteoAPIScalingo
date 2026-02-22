@@ -184,6 +184,7 @@ app.post("/api/likes", async (req, res) => {
         );
         res.json({ success: true });
     } catch (error) {
+        console.error('Erreur lors de l\'ajout du like:', error);
         if (error.code === '23505') {
             res.json({ success: false, message: "Film déjà liké" });
         } else {
